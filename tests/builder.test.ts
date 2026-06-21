@@ -82,6 +82,53 @@ describe('buildReleaseMessage', () => {
     expect(xml).not.toMatch(/\n  /);
   });
 
+  it('emits DisplayArtistName on both SoundRecording and Release before DisplayArtist', async () => {
+    const input = await loadFixture();
+    const xml = buildReleaseMessage(input).xml;
+
+    // Count once per parent (the fixture has one of each).
+    const occurrences = (xml.match(/<DisplayArtistName>Aria Vance<\/DisplayArtistName>/g) ?? []).length;
+    expect(occurrences).toBe(2);
+
+    // SoundRecording: DisplayArtistName precedes DisplayArtist within the
+    // SoundRecording element.
+    const srStart = xml.indexOf('<SoundRecording>');
+    const srEnd = xml.indexOf('</SoundRecording>', srStart);
+    const srBlock = xml.slice(srStart, srEnd);
+    const srNameIdx = srBlock.indexOf('<DisplayArtistName>');
+    const srArtistIdx = srBlock.indexOf('<DisplayArtist ');
+    expect(srNameIdx).toBeGreaterThan(0);
+    expect(srNameIdx).toBeLessThan(srArtistIdx);
+
+    // Release: DisplayArtistName precedes DisplayArtist within the Release element.
+    const relStart = xml.indexOf('<Release>');
+    const relEnd = xml.indexOf('</Release>', relStart);
+    const relBlock = xml.slice(relStart, relEnd);
+    const relNameIdx = relBlock.indexOf('<DisplayArtistName>');
+    const relArtistIdx = relBlock.indexOf('<DisplayArtist ');
+    expect(relNameIdx).toBeGreaterThan(0);
+    expect(relNameIdx).toBeLessThan(relArtistIdx);
+  });
+
+  it('emits PLine and CLine as composites with Year and text', async () => {
+    const input = await loadFixture();
+    const xml = buildReleaseMessage(input).xml;
+    expect(xml).toMatch(/<PLine>[\s\S]*?<Year>2026<\/Year>[\s\S]*?<PLineText>\(P\) 2026 Noisyloop Records<\/PLineText>[\s\S]*?<\/PLine>/);
+    expect(xml).toMatch(/<CLine>[\s\S]*?<Year>2026<\/Year>[\s\S]*?<CLineText>\(C\) 2026 Noisyloop Records<\/CLineText>[\s\S]*?<\/CLine>/);
+  });
+
+  it('does not emit ReleaseResourceReferenceList (removed in ERN 4.3)', async () => {
+    const input = await loadFixture();
+    const xml = buildReleaseMessage(input).xml;
+    expect(xml).not.toContain('ReleaseResourceReferenceList');
+  });
+
+  it('requires createdDateTime (no implicit now() fallback)', async () => {
+    const input = await loadFixture();
+    delete (input.header as Record<string, unknown>).createdDateTime;
+    expect(() => buildReleaseMessage(input)).toThrow(/Invalid release message input/);
+  });
+
   it('escapes special characters in text content', async () => {
     const input = await loadFixture();
     (input.soundRecordings as Array<{ title: string }>)[0]!.title = 'Static & Light <demo>';

@@ -36,6 +36,7 @@
       "isrc": "USRC12500001",
       "title": "Lantern in the Static",
       "duration": "PT3M42S",
+      "displayArtistName": "Aria Vance",
       "displayArtists": ["artist-aria"],
       "contributors": [
         { "partyKey": "producer-kai", "role": "Producer" }
@@ -72,12 +73,21 @@
       "upc": "5060000000016",
       "type": "Single",
       "title": "Lantern in the Static",
+      "displayArtistName": "Aria Vance",
       "displayArtists": ["artist-aria"],
       "labelPartyKey": "label-noisyloop",
       "genre": "Electronic",
       "subGenre": "Ambient",
-      "pLine": "(P) 2026 Noisyloop Records",
-      "cLine": "(C) 2026 Noisyloop Records",
+      "pLine": {
+        "year": 2026,
+        "text": "(P) 2026 Noisyloop Records",
+        "company": "Noisyloop Records"
+      },
+      "cLine": {
+        "year": 2026,
+        "text": "(C) 2026 Noisyloop Records",
+        "company": "Noisyloop Records"
+      },
       "coverArtKey": "cover",
       "tracks": [
         { "soundRecordingKey": "track-1", "position": 1 }

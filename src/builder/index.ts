@@ -8,6 +8,7 @@
  */
 
 import {
+  type CopyrightLine,
   type Deal,
   type Image,
   type MessageHeader,
@@ -171,7 +172,6 @@ function validateCrossReferences(input: ReleaseMessageInput): void {
 // --- MessageHeader ---------------------------------------------------------
 
 function buildMessageHeader(header: MessageHeader, _prefix: string): XmlElement {
-  const createdAt = header.createdDateTime ?? new Date().toISOString();
   return el(
     'MessageHeader',
     undefined,
@@ -187,7 +187,7 @@ function buildMessageHeader(header: MessageHeader, _prefix: string): XmlElement 
         leaf('PartyId', header.recipient.partyId),
         el('PartyName', undefined, [leaf('FullName', header.recipient.partyName)]),
       ]),
-      leaf('MessageCreatedDateTime', createdAt),
+      leaf('MessageCreatedDateTime', header.createdDateTime),
       leaf('MessageControlType', header.controlType),
     ]),
   );
@@ -261,6 +261,7 @@ function buildSoundRecording(sr: SoundRecording, refs: ReferenceTable): XmlEleme
           sr.subtitle ? leaf('SubTitle', sr.subtitle) : undefined,
         ]),
       ),
+      leaf('DisplayArtistName', sr.displayArtistName),
       ...buildDisplayArtists(sr.displayArtists, refs),
       ...sr.contributors.map((c) =>
         el('Contributor', undefined, [
@@ -366,10 +367,6 @@ function buildReleaseList(releases: Release[], refs: ReferenceTable, _prefix: st
 
 function buildRelease(rel: Release, refs: ReferenceTable): XmlElement {
   const sortedTracks = [...rel.tracks].sort((a, b) => a.position - b.position);
-  const resourceRefs = compact([
-    rel.coverArtKey ? leaf('ReleaseResourceReference', refs.image(rel.coverArtKey)) : undefined,
-    ...sortedTracks.map((t) => leaf('ReleaseResourceReference', refs.soundRecording(t.soundRecordingKey))),
-  ]);
 
   const resourceGroup = el(
     'ResourceGroup',
@@ -382,6 +379,11 @@ function buildRelease(rel: Release, refs: ReferenceTable): XmlElement {
           leaf('ReleaseResourceReference', refs.soundRecording(t.soundRecordingKey)),
         ]),
       ),
+      // ERN 4.3 carries cover art as a LinkedReleaseResourceReference at the
+      // tail of the ResourceGroup rather than via a separate top-level list.
+      rel.coverArtKey
+        ? leaf('LinkedReleaseResourceReference', refs.image(rel.coverArtKey))
+        : undefined,
     ]),
   );
 
@@ -403,6 +405,7 @@ function buildRelease(rel: Release, refs: ReferenceTable): XmlElement {
         undefined,
         compact([leaf('TitleText', rel.title), rel.subtitle ? leaf('SubTitle', rel.subtitle) : undefined]),
       ),
+      leaf('DisplayArtistName', rel.displayArtistName),
       ...buildDisplayArtists(rel.displayArtists, refs),
       leaf('ReleaseLabelReference', refs.party(rel.labelPartyKey)),
       el(
@@ -410,11 +413,27 @@ function buildRelease(rel: Release, refs: ReferenceTable): XmlElement {
         undefined,
         compact([leaf('GenreText', rel.genre), rel.subGenre ? leaf('SubGenre', rel.subGenre) : undefined]),
       ),
-      rel.pLine ? leaf('PLine', rel.pLine) : undefined,
-      rel.cLine ? leaf('CLine', rel.cLine) : undefined,
+      rel.pLine ? buildCopyrightLine('PLine', rel.pLine) : undefined,
+      rel.cLine ? buildCopyrightLine('CLine', rel.cLine) : undefined,
       leaf('ParentalWarningType', rel.parentalWarning),
-      el('ReleaseResourceReferenceList', undefined, resourceRefs),
       resourceGroup,
+    ]),
+  );
+}
+
+function buildCopyrightLine(
+  tag: 'PLine' | 'CLine',
+  line: CopyrightLine,
+): XmlElement {
+  const companyTag = tag === 'PLine' ? 'PLineCompany' : 'CLineCompany';
+  const textTag = tag === 'PLine' ? 'PLineText' : 'CLineText';
+  return el(
+    tag,
+    undefined,
+    compact([
+      leaf('Year', line.year),
+      line.company ? leaf(companyTag, line.company) : undefined,
+      leaf(textTag, line.text),
     ]),
   );
 }

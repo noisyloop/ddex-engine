@@ -102,6 +102,13 @@ export const soundRecordingSchema = z.object({
   subtitle: z.string().optional(),
   /** ISO 8601 duration, e.g. "PT3M42S". */
   duration: durationSchema,
+  /**
+   * Editorial compound string for the recording's artists (e.g. "A & B").
+   * Required by ERN 4.3 and emitted before the DisplayArtist composites.
+   * The label supplies the form ("&" vs "vs." vs "feat.") rather than the
+   * builder concatenating party names.
+   */
+  displayArtistName: z.string().min(1),
   /** PartyKey(s) for the displayed artists, in display order. */
   displayArtists: z.array(z.string().min(1)).min(1),
   contributors: z.array(contributorSchema).default([]),
@@ -140,6 +147,19 @@ export const trackEntrySchema = z.object({
   position: z.number().int().positive(),
 });
 
+/**
+ * PLine / CLine composite. ERN 4.3 models these as structured composites
+ * with Year (gYear), an optional company name, and the full notice text.
+ * Element order in the emitted XML is Year, Company, Text (per XSD).
+ */
+export const copyrightLineSchema = z.object({
+  year: z.number().int().gte(1900).lte(2999),
+  text: z.string().min(1),
+  company: z.string().min(1).optional(),
+});
+
+export type CopyrightLine = z.infer<typeof copyrightLineSchema>;
+
 export const releaseSchema = z.object({
   /** Stable key for the release; builder mints a ReleaseReference (R1) from it. */
   key: z.string().min(1),
@@ -150,15 +170,20 @@ export const releaseSchema = z.object({
   type: releaseTypeSchema,
   title: z.string().min(1),
   subtitle: z.string().optional(),
+  /**
+   * Editorial compound string for the release's artists; required by ERN 4.3
+   * and emitted before the DisplayArtist composites.
+   */
+  displayArtistName: z.string().min(1),
   displayArtists: z.array(z.string().min(1)).min(1),
   /** PartyKey for the label that owns this release. */
   labelPartyKey: z.string().min(1),
   genre: z.string().min(1),
   subGenre: z.string().optional(),
-  /** Copyright (C-Line) text including year and owner. */
-  cLine: z.string().optional(),
-  /** Phonographic copyright (P-Line) text including year and owner. */
-  pLine: z.string().optional(),
+  /** Copyright (C-Line) composite. */
+  cLine: copyrightLineSchema.optional(),
+  /** Phonographic copyright (P-Line) composite. */
+  pLine: copyrightLineSchema.optional(),
   parentalWarning: z.enum(['NotExplicit', 'Explicit', 'ExplicitContentEdited']).default('NotExplicit'),
   /** Cover art image key (must reference one of the images in resources). */
   coverArtKey: z.string().optional(),
@@ -220,8 +245,11 @@ export const messageHeaderSchema = z.object({
     partyId: z.string().min(1),
     partyName: z.string().min(1),
   }),
-  /** Defaults to now() at build time if omitted. */
-  createdDateTime: dateTimeSchema.optional(),
+  /**
+   * Required: the builder will not invent a timestamp. Same input must produce
+   * byte-identical output, so the caller owns this value.
+   */
+  createdDateTime: dateTimeSchema,
   /** "TestMessage" or "LiveMessage". */
   controlType: z.enum(['TestMessage', 'LiveMessage']).default('LiveMessage'),
 });

@@ -87,15 +87,21 @@ export const ERN_43_ELEMENT_ORDER: Record<string, readonly string[]> = {
     'PLine',
     'CLine',
     'ParentalWarningType',
-    'ReleaseResourceReferenceList',
     'ResourceGroup',
   ],
 
   ReleaseId: ['GRid', 'ICPN', 'ProprietaryId'],
   DisplayTitle: ['TitleText', 'SubTitle'],
   Genre: ['GenreText', 'SubGenre'],
+  PLine: ['Year', 'PLineCompany', 'PLineText'],
+  CLine: ['Year', 'CLineCompany', 'CLineText'],
 
-  ResourceGroup: ['SequenceNumber', 'ResourceGroup', 'ResourceGroupContentItem'],
+  ResourceGroup: [
+    'SequenceNumber',
+    'ResourceGroup',
+    'ResourceGroupContentItem',
+    'LinkedReleaseResourceReference',
+  ],
   ResourceGroupContentItem: ['SequenceNumber', 'ReleaseResourceReference'],
 
   DealList: ['ReleaseDeal'],

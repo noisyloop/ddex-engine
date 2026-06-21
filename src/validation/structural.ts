@@ -271,13 +271,23 @@ function validateReleaseList(
       }
     }
 
-    const refList = rel.ReleaseResourceReferenceList as AnyXmlNode | undefined;
-    for (const r of asArray(refList?.ReleaseResourceReference) as unknown[]) {
+    const resourceGroup = rel.ResourceGroup as AnyXmlNode | undefined;
+    for (const item of asArray(resourceGroup?.ResourceGroupContentItem) as AnyXmlNode[]) {
+      const refValue = textOf(item.ReleaseResourceReference);
+      if (refValue && !recordingRefs.has(refValue) && !imageRefs.has(refValue)) {
+        errors.push({
+          severity: 'error',
+          path: `${path}/ResourceGroup/ResourceGroupContentItem/ReleaseResourceReference`,
+          message: `Dangling resource reference "${refValue}"`,
+        });
+      }
+    }
+    for (const r of asArray(resourceGroup?.LinkedReleaseResourceReference) as unknown[]) {
       const refValue = textOf(r);
       if (refValue && !recordingRefs.has(refValue) && !imageRefs.has(refValue)) {
         errors.push({
           severity: 'error',
-          path: `${path}/ReleaseResourceReferenceList`,
+          path: `${path}/ResourceGroup/LinkedReleaseResourceReference`,
           message: `Dangling resource reference "${refValue}"`,
         });
       }
