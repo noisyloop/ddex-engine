@@ -14,6 +14,7 @@
 
 import { XMLParser } from 'fast-xml-parser';
 import type {
+  CopyrightLine,
   Deal,
   Image,
   MessageHeader,
@@ -138,7 +139,7 @@ function parseHeader(header: AnyNode | undefined): MessageHeader {
         'MessageRecipient.PartyName.FullName',
       ),
     },
-    createdDateTime: textOf(header.MessageCreatedDateTime),
+    createdDateTime: requireText(header.MessageCreatedDateTime, 'MessageCreatedDateTime'),
     controlType: (textOf(header.MessageControlType) as 'LiveMessage' | 'TestMessage') ?? 'LiveMessage',
   };
 }
@@ -208,6 +209,7 @@ function parseSoundRecording(sr: AnyNode): SoundRecording {
     isrc,
     title: requireText(sr.DisplayTitleText, 'DisplayTitleText'),
     duration: requireText(sr.Duration, 'Duration'),
+    displayArtistName: requireText(sr.DisplayArtistName, 'SoundRecording.DisplayArtistName'),
     displayArtists,
     contributors,
     audioCodec: (textOf(td?.AudioCodecType) as SoundRecording['audioCodec']) ?? 'WAV',
@@ -278,12 +280,6 @@ function parseReleaseList(list: AnyNode | undefined): Release[] {
       requireText(da.ArtistPartyReference, 'Release.ArtistPartyReference'),
     );
 
-    const refList = rel.ReleaseResourceReferenceList as AnyNode | undefined;
-    const allRefs = asArray(refList?.ReleaseResourceReference as unknown).map((r) =>
-      requireText(r, 'ReleaseResourceReference'),
-    );
-    const coverArtKey = allRefs.find((r) => r.startsWith('I'));
-
     const resourceGroup = rel.ResourceGroup as AnyNode | undefined;
     const tracks = asArray(
       resourceGroup?.ResourceGroupContentItem as AnyNode | AnyNode[] | undefined,
@@ -291,6 +287,15 @@ function parseReleaseList(list: AnyNode | undefined): Release[] {
       soundRecordingKey: requireText(item.ReleaseResourceReference, 'ResourceGroupContentItem ref'),
       position: Number(requireText(item.SequenceNumber, 'ResourceGroupContentItem.SequenceNumber')),
     }));
+    // Cover art reference rides as a LinkedReleaseResourceReference at the end
+    // of ResourceGroup in ERN 4.3 (the old top-level ReleaseResourceReferenceList
+    // is gone).
+    const linkedRefs = asArray(
+      resourceGroup?.LinkedReleaseResourceReference as unknown,
+    )
+      .map((r) => textOf(r))
+      .filter((r): r is string => r !== undefined);
+    const coverArtKey = linkedRefs[0];
 
     const genre = rel.Genre as AnyNode | undefined;
     const release: Release = {
@@ -298,6 +303,7 @@ function parseReleaseList(list: AnyNode | undefined): Release[] {
       upc: icpn,
       type: requireText(rel.ReleaseType, 'ReleaseType') as Release['type'],
       title: requireText(rel.DisplayTitleText, 'Release.DisplayTitleText'),
+      displayArtistName: requireText(rel.DisplayArtistName, 'Release.DisplayArtistName'),
       displayArtists,
       labelPartyKey: requireText(rel.ReleaseLabelReference, 'ReleaseLabelReference'),
       genre: requireText(genre?.GenreText, 'Genre.GenreText'),
@@ -312,14 +318,30 @@ function parseReleaseList(list: AnyNode | undefined): Release[] {
     if (grid !== undefined) release.grid = grid;
     const subGenre = textOf(genre?.SubGenre);
     if (subGenre !== undefined) release.subGenre = subGenre;
-    const pLine = textOf(rel.PLine);
+    const pLine = parseCopyrightLine(rel.PLine as AnyNode | undefined, 'PLine');
     if (pLine !== undefined) release.pLine = pLine;
-    const cLine = textOf(rel.CLine);
+    const cLine = parseCopyrightLine(rel.CLine as AnyNode | undefined, 'CLine');
     if (cLine !== undefined) release.cLine = cLine;
     if (coverArtKey !== undefined) release.coverArtKey = coverArtKey;
 
     return release;
   });
+}
+
+function parseCopyrightLine(
+  node: AnyNode | undefined,
+  tag: 'PLine' | 'CLine',
+): CopyrightLine | undefined {
+  if (!node) return undefined;
+  const textTag = tag === 'PLine' ? 'PLineText' : 'CLineText';
+  const companyTag = tag === 'PLine' ? 'PLineCompany' : 'CLineCompany';
+  const text = textOf(node[textTag]);
+  const yearText = textOf(node.Year);
+  if (text === undefined || yearText === undefined) return undefined;
+  const line: CopyrightLine = { year: Number(yearText), text };
+  const company = textOf(node[companyTag]);
+  if (company !== undefined) line.company = company;
+  return line;
 }
 
 function parseDealList(list: AnyNode | undefined): Deal[] {

@@ -14,6 +14,14 @@ pnpm ddex inspect out.xml                                 # parsed summary
 pnpm test                                                 # vitest
 ```
 
+### XSD conformance (dev-only)
+
+`pnpm test:conformance` validates built fixture output against the vendored
+ERN 4.3 XSD in `schemas/ddex/` using `libxmljs2`. It's split out from
+`pnpm test` because libxmljs2 ships a native binding (prebuilt for most
+platforms; falls back to `node-gyp rebuild`) that some CI images can't
+compile. Run it locally before shipping conformance fixes.
+
 ## CLI
 
 ```
