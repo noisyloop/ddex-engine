@@ -1,0 +1,96 @@
+{
+  "config": { "version": "4.3", "pretty": true },
+  "header": {
+    "messageId": "MSG-2026-0001",
+    "messageThreadId": "THREAD-NL-001",
+    "sender": {
+      "partyId": "PADPIDA2014020403U",
+      "partyName": "Noisyloop"
+    },
+    "recipient": {
+      "partyId": "PADPIDA2007081501J",
+      "partyName": "Spotify"
+    },
+    "createdDateTime": "2026-06-21T12:00:00Z",
+    "controlType": "TestMessage"
+  },
+  "parties": [
+    {
+      "key": "label-noisyloop",
+      "name": "Noisyloop Records",
+      "identifiers": { "dpid": "PADPIDA2014020403U" }
+    },
+    {
+      "key": "artist-aria",
+      "name": "Aria Vance",
+      "identifiers": { "isni": "0000000123456789" }
+    },
+    {
+      "key": "producer-kai",
+      "name": "Kai Sundberg"
+    }
+  ],
+  "soundRecordings": [
+    {
+      "key": "track-1",
+      "isrc": "USRC12500001",
+      "title": "Lantern in the Static",
+      "duration": "PT3M42S",
+      "displayArtists": ["artist-aria"],
+      "contributors": [
+        { "partyKey": "producer-kai", "role": "Producer" }
+      ],
+      "audioCodec": "FLAC",
+      "samplingRate": 44100,
+      "bitsPerSample": 16,
+      "numberOfChannels": 2,
+      "file": {
+        "uri": "audio/track-1.flac",
+        "hash": {
+          "value": "d41d8cd98f00b204e9800998ecf8427e",
+          "algorithm": "MD5"
+        }
+      },
+      "parentalWarning": "NotExplicit"
+    }
+  ],
+  "images": [
+    {
+      "key": "cover",
+      "imageCodec": "JPEG",
+      "width": 3000,
+      "height": 3000,
+      "file": {
+        "uri": "images/cover.jpg",
+        "hash": { "value": "abc123", "algorithm": "SHA256" }
+      }
+    }
+  ],
+  "releases": [
+    {
+      "key": "rel-1",
+      "upc": "5060000000016",
+      "type": "Single",
+      "title": "Lantern in the Static",
+      "displayArtists": ["artist-aria"],
+      "labelPartyKey": "label-noisyloop",
+      "genre": "Electronic",
+      "subGenre": "Ambient",
+      "pLine": "(P) 2026 Noisyloop Records",
+      "cLine": "(C) 2026 Noisyloop Records",
+      "coverArtKey": "cover",
+      "tracks": [
+        { "soundRecordingKey": "track-1", "position": 1 }
+      ]
+    }
+  ],
+  "deals": [
+    {
+      "releaseKeys": ["rel-1"],
+      "commercialModel": "PayAsYouGoModel",
+      "useTypes": ["OnDemandStream"],
+      "territories": ["Worldwide"],
+      "startDate": "2026-07-01"
+    }
+  ]
+}
